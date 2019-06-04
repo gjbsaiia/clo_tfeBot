@@ -59,6 +59,9 @@ def getState(name):
 
     # need to check for job failure,, test 'client.show_workspace_current_run(workspace_name=branch_spaces[key])'
 
+    #get all runs in a given workspace
+        #GET /workspaces/:workspace_id/runs
+
     state_obj = client.get_raw_state(workspace_name=branch_spaces[key])
     data = json.load(state_obj)
 
