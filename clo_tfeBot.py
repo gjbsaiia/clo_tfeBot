@@ -58,7 +58,7 @@ def get_tfe_token():
 
 # grab .json state file, ensure it's up to date
 def getState(workspace):
-    global mytoken, headers
+    global mytoken, headers, base_url
     url = base_url+workspace+"/runs"
     auth = {'Authorization':"Bearer "+mytoken}
     headers.update(auth)
