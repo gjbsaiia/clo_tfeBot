@@ -11,14 +11,17 @@ import os
 import sys
 import json
 import requests
+import base64
 from datetime import datetime
+from email.mime.text import MIMEText
+import pickle
+
 import clo-pyghe
 from clo-pytfe import pytfe
 
-#import pickle
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport,requests import Request
+from google.auth.transport.requests import Request
 
 branchDic = {
     "feature-griffin_repo": ["griffin", "griffin_j_saiia@progressive.com"],
@@ -66,39 +69,67 @@ def getState(name):
     data = json.load(state_obj)
 
 def composeMsg(name, outputs, path):
+    global didRun
     lines = []
     msg = ""
+    key = name.lower()
     with open(path) as template:
         lines = template.readlines()
-        entries.close()
+        template.close()
     i = 0
     for line in lines:
         if(i == 1):
-            msg+=key+"\n"
+            msg+=key+",\n\n"
         if(i == 2):
             msg+=branch_spaces[key]+"\n"
+            if(didRun):
+                msg+="\n"
         if(i == 3):
             for each in outputs:
-                msg+=each[0]+": "+each[1]+"\n"
+                msg+="    "+each[0]+": "+each[1]+"\n"
+            msg+="\n"
         msg += line
-        i++
+        i += 1
     return msg
 
 def sendMail(name, email, outputs):
+    global didRun, success, fail
     body = ""
     path = ""
     if(didRun):
-        path = "configuration_output.txt"
+        path = success
     else:
-        path = "configuration_failure.txt"
+        path = fail
     body = composeMsg(name, outputs, path)
     message = MIMEText(body)
     message['to']=email
-    message['from']=service_address
+    message['from']="tfe.service.bot@gmail.com"
     message['subject']="TFE RUN ALERT: "+branch_spaces[name]
-    encoded = base.urlsafe_b64encode(message.as_string())
+    b64_bytes = base64.urlsafe_b64encode(message.as_bytes())
+    b64_string = b64_bytes.decode()
+    body = {'raw': b64_string}
     try:
-        sendMsg = (service.users().messages().send(userId=user_id, body=encoded).execute())
+        sendMsg = service.users().messages().send(userId="me", body=body).execute()
         print("Message Id: "+sendMsg['id'])
-    except errors.HttpError, error:
-        print("Send failed. An Error occurred: "+error)
+    except:
+        print("Send failed. An Error occurred.")
+
+def readyMailCall():
+    creds = None
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server()
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+    service = build('gmail', 'v1', credentials=creds)
+    sendMail(name, email, outputs, service)
+
+if __name__ == '__main__':
+    main()

@@ -1,5 +1,6 @@
-Greetings 
-Unfortunately the latest configuration of 
-failed. 
+Greetings
+Unfortunately the latest configuration of
+failed.
 Please go to https://clo-tfe-prod.prci.com/ for more details.
+
 - tfeBot, Maintainer of the 'Form
