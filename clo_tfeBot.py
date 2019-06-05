@@ -22,8 +22,6 @@ from google.auth.transport.requests import Request
 
 branchDic = {
     "Griffin": [["ws-eogvTqraZV4a2Pzt", "ws-Mi7GaLeksgfvcXZW"], "griffin_j_saiia@progressive.com"],
-    "feature-robbie_repo": ["robbie", "robbie_j_barnes@progressive.com"],
-    "feature-dhanush_repo": ["dhanush", "dhanush_venkatesh@progressive.com"]
 }
 
 # base url
@@ -39,8 +37,6 @@ headers = {
 
 # creds
 mytoken = ""
-# tfe client obj
-client = ""
 #msg paths
 success = "configuration_output.txt"
 fail = "configuration_failure.txt"
@@ -49,7 +45,7 @@ didRun = false
 
 # pull down all active workspaces
 def onStart():
-    global client, mytoken
+    global mytoken
     get_tfe_token()
 
 # pulls token out of .txt file in root directory
@@ -62,7 +58,7 @@ def get_tfe_token():
 
 # grab .json state file, ensure it's up to date
 def getState(workspace):
-    global mytoken
+    global mytoken, headers
     url = base_url+workspace+"/runs"
     auth = {'Authorization':"Bearer "+mytoken}
     headers.update(auth)
