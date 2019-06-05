@@ -1,28 +1,26 @@
-#!python
+#!python3
 
-
-# Resources::
-# https://www.terraform.io/docs/enterprise/api/run.html
-# https://githubprod.prci.com/progressive/clo-pyghe/blob/develop/clo_pyghe/pyghe.py
-# https://githubprod.prci.com/progressive/clo-pytfe/blob/master/clo_pytfe/pytfe.py
-# https://githubprod.prci.com/progressive/clo-slfsrvc-tools/blob/feature-ptfe/ptfe/plan_apply_logs/tfe_apply_logs.py
-
+# native python libs
 import os
 import sys
 import json
 import requests
 import base64
-from datetime import datetime
+import time
 from email.mime.text import MIMEText
 import pickle
-
+# google libs
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+# Convention is as follows:
+#   "FirstName": [["AWS Workspace", "Azure Workspace"], "user_email"]
 branchDic = {
     "Griffin": [["ws-eogvTqraZV4a2Pzt", "ws-Mi7GaLeksgfvcXZW"], "griffin_j_saiia@progressive.com"],
 }
+
+provider = ["AWS", "Azure"]
 
 # base url
 base_url = "https://clo-tfe-prod.prci.com/api/v2/workspaces/"
@@ -41,7 +39,7 @@ mytoken = ""
 success = "configuration_output.txt"
 fail = "configuration_failure.txt"
 #flag
-didRun = false
+didRun = -1
 
 # pull down all active workspaces
 def onStart():
@@ -64,6 +62,7 @@ def getState(workspace):
     headers.update(auth)
     response = requests.request("GET", url, headers=headers)
     data = json.load(response)
+    # NOT DONE
 
 
 def composeMsg(name, outputs, path):
@@ -80,7 +79,7 @@ def composeMsg(name, outputs, path):
             msg+=key+",\n\n"
         if(i == 2):
             msg+=branch_spaces[key]+"\n"
-            if(didRun):
+            if(didRun > -1):
                 msg+="\n"
         if(i == 3):
             for each in outputs:
@@ -91,10 +90,10 @@ def composeMsg(name, outputs, path):
     return msg
 
 def sendMail(name, email, outputs):
-    global didRun, success, fail
+    global didRun, success, fail, provider, branchDic
     body = ""
     path = ""
-    if(didRun):
+    if(didRun > -1):
         path = success
     else:
         path = fail
@@ -102,7 +101,10 @@ def sendMail(name, email, outputs):
     message = MIMEText(body)
     message['to']=email
     message['from']="tfe.service.bot@gmail.com"
-    message['subject']="TFE RUN ALERT: "+branch_spaces[name]
+    if(didRun > -1):
+        message['subject']="TFE RUN ALERT: "+branchDic[name][0][didRun]+" on "+provider[didRun]
+    else:
+        message['subject']="TFE RUN ALERT: Job Failed"
     b64_bytes = base64.urlsafe_b64encode(message.as_bytes())
     b64_string = b64_bytes.decode()
     body = {'raw': b64_string}
@@ -129,6 +131,22 @@ def readyMailCall(name, outputs):
             pickle.dump(creds, token)
     service = build('gmail', 'v1', credentials=creds)
     sendMail(name, email, outputs, service)
+
+def main():
+    global didRun, branchDic
+    outputs = []
+    name = ""
+    onStart()
+    while(True):
+        while(didRun < 0):
+            for key in branchDic:
+                name = key
+                spaces = branchDic[key]
+                for each in spaces:
+                    outputs = getState(each)
+                    time.sleep(5)
+        readyMailCall(name, outputs)
+        time.sleep(5)
 
 if __name__ == '__main__':
     main()
