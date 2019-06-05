@@ -112,7 +112,8 @@ def sendMail(name, email, outputs):
     except:
         print("Send failed. An Error occurred.")
 
-def readyMailCall():
+def readyMailCall(name, outputs):
+    email = branchDic[name][1]
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
