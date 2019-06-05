@@ -16,25 +16,31 @@ from datetime import datetime
 from email.mime.text import MIMEText
 import pickle
 
-import clo-pyghe
-from clo-pytfe import pytfe
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 branchDic = {
-    "feature-griffin_repo": ["griffin", "griffin_j_saiia@progressive.com"],
+    "Griffin": [["ws-eogvTqraZV4a2Pzt", "ws-Mi7GaLeksgfvcXZW"], "griffin_j_saiia@progressive.com"],
     "feature-robbie_repo": ["robbie", "robbie_j_barnes@progressive.com"],
     "feature-dhanush_repo": ["dhanush", "dhanush_venkatesh@progressive.com"]
 }
 
-# branch-to-workspace dictionary
-branch_spaces = {}
+# base url
+base_url = "https://clo-tfe-prod.prci.com/api/v2/workspaces/"
+
+# headers
+headers = {
+    'Content-Type': "application/vnd.api+json",
+    'data': "@payload.json",
+    'Cache-Control': "no-cache",
+    'Postman-Token': "c6496ff7-9665-4de7-bdec-243dd23321d1"
+}
+
 # creds
-mytoken = os.getenv('ATLAS_TOKEN') # check for this on local machine
+mytoken = ""
 # tfe client obj
-client = pytfe.TfeClient(atlas_token=mytoken, org="ets")
+client = ""
 #msg paths
 success = "configuration_output.txt"
 fail = "configuration_failure.txt"
@@ -43,30 +49,26 @@ didRun = false
 
 # pull down all active workspaces
 def onStart():
-    active_workspaces = client.list_workspaces()
-    getWorkspaces(active_workspaces)
+    global client, mytoken
+    get_tfe_token()
 
-# pull out all workspaces with our names (works for interns)
-def getWorkspaces(workspaces):
-    for each in workspaces:
-        for key in branchDic:
-            if each.contains(branchDic[key][0]):
-                try:
-                    branch_spaces.add(branchDic[key][0]:[each])
-                except KeyError:
-                    branch_spaces.update(branchDic[key][0], branch_spaces[branchDic[key][0].add(each)])
+# pulls token out of .txt file in root directory
+def get_tfe_token():
+    global mytoken
+    with open("tfe_token.txt") as token_txt:
+        lines = token_text.readlines()
+        mytoken = lines[0]
+        token_txt.close()
 
 # grab .json state file, ensure it's up to date
-def getState(name):
-    ct = datetime.ctime # needs format matching .json --> allow +/- 3s?
+def getState(workspace):
+    global mytoken
+    url = base_url+workspace+"/runs"
+    auth = {'Authorization':"Bearer "+mytoken}
+    headers.update(auth)
+    response = requests.request("GET", url, headers=headers)
+    data = json.load(response)
 
-    # need to check for job failure,, test 'client.show_workspace_current_run(workspace_name=branch_spaces[key])'
-
-    #get all runs in a given workspace
-        #GET /workspaces/:workspace_id/runs
-
-    state_obj = client.get_raw_state(workspace_name=branch_spaces[key])
-    data = json.load(state_obj)
 
 def composeMsg(name, outputs, path):
     global didRun
