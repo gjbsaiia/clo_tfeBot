@@ -1,6 +1,5 @@
 #### Credentials ####
 ###################################
 credentials.json
-monkey.json
 token.pickle
 tfe_token.txt
