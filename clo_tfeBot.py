@@ -55,14 +55,33 @@ def get_tfe_token():
         token_txt.close()
 
 # grab .json state file, ensure it's up to date
-def getState(workspace):
-    global mytoken, headers, base_url
+def getState(workspace, i):
+    global mytoken, headers, base_url, didRun
+    outputs = []
     url = base_url+workspace+"/runs"
     auth = {'Authorization':"Bearer "+mytoken}
     headers.update(auth)
     response = requests.request("GET", url, headers=headers)
-    data = json.load(response)
-    # NOT DONE
+    all = json.load(response)
+    data = all["data"]
+    run = data[0]
+    for key in run:
+        if(key == "id"):
+            outputs.add(["run",run[key]])
+        if(key == "attributes"):
+            attributes = run[key]
+            for key in attributes:
+                if(key == "status"):
+                    if(attributes[key] == "errored"):
+                        didRun = -1
+                    else:
+                        didRun = i
+                    outputs.add(["status",attributes[key]])
+        if(key == "links"):
+            links = run[key]
+            for key in links:
+                outputs.add(["link to run",url+links[key]])
+    return outputs
 
 
 def composeMsg(name, outputs, path):
@@ -140,11 +159,13 @@ def main():
     while(True):
         while(didRun < 0):
             for key in branchDic:
+                i = 0
                 name = key
                 spaces = branchDic[key]
                 for each in spaces:
-                    outputs = getState(each)
+                    outputs = getState(each, i)
                     time.sleep(5)
+                    i+= 1
         readyMailCall(name, outputs)
         time.sleep(5)
 
