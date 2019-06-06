@@ -64,10 +64,9 @@ def getState(workspace, i):
     response = requests.request("GET", url, headers=headers)
     all = json.load(response)
     data = all["data"]
-    run = data[0]
     for key in run:
         if(key == "id"):
-            outputs.add(["run",run[key]])
+            outputs.append(["run",run[key]])
         if(key == "attributes"):
             attributes = run[key]
             for key in attributes:
@@ -76,11 +75,11 @@ def getState(workspace, i):
                         didRun = -1
                     else:
                         didRun = i
-                    outputs.add(["status",attributes[key]])
+                    outputs.append(["status",attributes[key]])
         if(key == "links"):
             links = run[key]
             for key in links:
-                outputs.add(["link to run",url+links[key]])
+                outputs.append(["link to run",url+links[key]])
     return outputs
 
 
@@ -88,16 +87,15 @@ def composeMsg(name, outputs, path):
     global didRun
     lines = []
     msg = ""
-    key = name.lower()
     with open(path) as template:
         lines = template.readlines()
         template.close()
     i = 0
     for line in lines:
         if(i == 1):
-            msg+=key+",\n\n"
+            msg+=name+",\n\n"
         if(i == 2):
-            msg+=branch_spaces[key]+"\n"
+            msg+=(branchDic[name][0][didRun]+"\n")
             if(didRun > -1):
                 msg+="\n"
         if(i == 3):
@@ -108,7 +106,7 @@ def composeMsg(name, outputs, path):
         i += 1
     return msg
 
-def sendMail(name, email, outputs):
+def sendMail(name, email, outputs, service):
     global didRun, success, fail, provider, branchDic
     body = ""
     path = ""
@@ -134,6 +132,7 @@ def sendMail(name, email, outputs):
         print("Send failed. An Error occurred.")
 
 def readyMailCall(name, outputs):
+    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
     email = branchDic[name][1]
     creds = None
     if os.path.exists('token.pickle'):
@@ -155,19 +154,19 @@ def main():
     global didRun, branchDic
     outputs = []
     name = ""
-    onStart()
-    while(True):
-        while(didRun < 0):
-            for key in branchDic:
-                i = 0
-                name = key
-                spaces = branchDic[key]
-                for each in spaces:
-                    outputs = getState(each, i)
-                    time.sleep(5)
-                    i+= 1
-        readyMailCall(name, outputs)
-        time.sleep(5)
+    #onStart()
+    #while(True):
+    while(didRun < 0):
+        for key in branchDic:
+            i = 0
+            name = key
+            spaces = branchDic[key][0]
+            for each in spaces:
+                outputs = getState(each, i)
+                readyMailCall(name, outputs)
+                time.sleep(5)
+                i+= 1
+    time.sleep(5)
 
 if __name__ == '__main__':
     main()
