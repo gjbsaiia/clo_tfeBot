@@ -23,7 +23,7 @@ branchDic = {
 provider = ["AWS", "Azure"]
 
 # base url
-base_url = "https://clo-tfe-prod.prci.com/api/v2/workspaces/"
+base_url = "https://xxx.com/api/v2/workspaces/"
 
 # headers
 headers = {
