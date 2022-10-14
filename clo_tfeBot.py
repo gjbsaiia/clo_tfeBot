@@ -17,7 +17,7 @@ from google.auth.transport.requests import Request
 # Convention is as follows:
 #   "FirstName": [["AWS Workspace", "Azure Workspace"], "user_email"]
 branchDic = {
-    "Griffin": [["ws-eogvTqraZV4a2Pzt", "ws-Mi7GaLeksgfvcXZW"], "griffin_j_saiia@progressive.com"],
+    "Griffin": [["ws-secret", "ws-secret"], "griffin_j_saiia@company.com"],
 }
 
 provider = ["AWS", "Azure"]
@@ -30,7 +30,7 @@ headers = {
     'Content-Type': "application/vnd.api+json",
     'data': "@payload.json",
     'Cache-Control': "no-cache",
-    'Postman-Token': "c6496ff7-9665-4de7-bdec-243dd23321d1"
+    'Postman-Token': "token-secret"
 }
 
 # creds
